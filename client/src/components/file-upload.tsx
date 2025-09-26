@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, File, X, CheckCircle } from "lucide-react";
@@ -31,6 +31,14 @@ export function FileUpload({
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Clear file input when value becomes null (form reset)
+  useEffect(() => {
+    if (value === null && fileInputRef.current) {
+      fileInputRef.current.value = '';
+      setError(null); // Also clear any error state
+    }
+  }, [value]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';

@@ -59,7 +59,17 @@ export default function TravelBooking() {
         title: "Success",
         description: result.message || "Travel booking submitted successfully!",
       });
-      form.reset();
+      // Clear file first, then reset form
+      form.setValue("uploaded_file", null, { shouldDirty: false, shouldTouch: false, shouldValidate: false });
+      form.reset({
+        starting_date: "",
+        meals_provided: false,
+        flight_information: "",
+        tour_fair_includes: presetIncludes,
+        tour_fair_excludes: presetExcludes,
+        uploaded_file: null,
+        file_size_limit_enabled: true
+      });
       setFileSizeLimit(true);
     },
     onError: (error: Error) => {
