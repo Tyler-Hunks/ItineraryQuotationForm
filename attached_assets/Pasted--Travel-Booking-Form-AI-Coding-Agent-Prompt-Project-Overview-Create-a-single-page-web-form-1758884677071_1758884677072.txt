@@ -1,0 +1,182 @@
+# Travel Booking Form - AI Coding Agent Prompt
+
+## Project Overview
+Create a single-page web form for travel/tour booking data collection that integrates with n8n webhooks. The form should be built using vanilla JavaScript, HTML, and CSS for optimal performance and easy integration.
+
+## Form Fields & Requirements
+
+### 1. Starting Date of Travel
+- **Input Type:** Date picker
+- **Format:** dd/mm/yy
+- **Validation:** Basic date format validation
+- **Required:** No
+
+### 2. Meals Provided
+- **Input Type:** Yes/No radio buttons or toggle switch
+- **Default:** None selected
+- **Required:** No
+
+### 3. Flight Information
+- **Input Type:** Large text area
+- **Purpose:** Users will copy-paste flight details from various sources
+- **Placeholder:** "Paste your flight information here (flight numbers, times, destinations, etc.)"
+- **Validation:** Basic check that content exists (optional)
+- **Required:** No
+
+### 4. Tour Fair Includes
+- **Input Type:** Dynamic numbered list with preset items
+- **Preset Items (always displayed):**
+  a) Return International air fare + airport taxes + fuel surcharges + 20kg checked luggage
+  b) Stay 05 Night as per itinerary based on twin / triple sharing
+  c) Private touring in A/C coach with local Mandarin speaking guide as per itinerary
+  d) Meals as per itinerary
+  e) Tipping of tour guide & driver
+  f) Travel Insurance (for age above 69 years old, require to top up RM108)
+  g) 01 tour leader service
+
+- **Functionality:** 
+  - Display preset items as numbered list (a-g)
+  - "Add Item" button to add custom items (continues numbering: h, i, j, etc.)
+  - "Remove" button for each custom added item (preset items cannot be removed)
+  - Auto-numbering with letters (a, b, c, etc.)
+
+### 5. Tour Fair Excludes
+- **Input Type:** Dynamic numbered list with preset items
+- **Preset Items (always displayed):**
+  a) Hotel Portage in/out luggage
+  b) Other expenses which are not indicated in itinerary
+
+- **Functionality:**
+  - Same as Tour Fair Includes
+  - "Add Item" button for custom items (continues: c, d, e, etc.)
+  - "Remove" button for custom items only
+  - Auto-numbering with letters
+
+### 6. File Upload
+- **Input Type:** File upload field
+- **Accepted Formats:** PDF, DOC, DOCX
+- **Purpose:** Upload travel itinerary documents
+- **Size Limit Toggle:** 
+  - Toggle switch to enable/disable 10MB file size limit
+  - When enabled: 10MB maximum file size
+  - When disabled: No file size limit
+  - Default: 10MB limit enabled
+- **Validation:** File type validation and size validation based on toggle setting
+- **Required:** Yes (this is the only required field)
+
+## Technical Specifications
+
+### Framework & Technologies
+- **Primary:** Vanilla JavaScript, HTML5, CSS3
+- **No external libraries required** (keep it lightweight)
+- **Responsive design** for mobile and desktop
+
+### Form Validation
+- **Client-side validation:**
+  - Date format validation (dd/mm/yy)
+  - File type validation (PDF, DOC, DOCX)
+  - File size validation based on toggle setting
+  - Required field validation (file upload only)
+- **User-friendly error messages**
+- **Real-time validation feedback**
+
+### Data Output Format
+- **Format:** JSON
+- **Structure:**
+```json
+{
+  "starting_date": "25/12/24",
+  "meals_provided": true,
+  "flight_information": "Flight details pasted by user...",
+  "tour_fair_includes": [
+    "Return International air fare + airport taxes + fuel surcharges + 20kg checked luggage",
+    "Stay 05 Night as per itinerary based on twin / triple sharing",
+    "Private touring in A/C coach with local Mandarin speaking guide as per itinerary",
+    "Meals as per itinerary",
+    "Tipping of tour guide & driver",
+    "Travel Insurance (for age above 69 years old, require to top up RM108)",
+    "01 tour leader service",
+    "Custom item 1",
+    "Custom item 2"
+  ],
+  "tour_fair_excludes": [
+    "Hotel Portage in/out luggage",
+    "Other expenses which are not indicated in itinerary",
+    "Custom exclusion item"
+  ],
+  "uploaded_file": {
+    "filename": "itinerary.pdf",
+    "size": 2048576,
+    "type": "application/pdf",
+    "data": "base64_encoded_file_content"
+  },
+  "file_size_limit_enabled": true
+}
+```
+
+### Webhook Integration
+- **Method:** POST request
+- **Endpoint:** To be configured for n8n integration
+- **Headers:** Content-Type: application/json
+- **Error Handling:** Display user-friendly messages for failed submissions
+- **Success Feedback:** Confirmation message after successful submission
+
+## User Experience Requirements
+
+### Design Guidelines
+- **Clean, professional appearance**
+- **Intuitive user interface**
+- **Mobile-responsive design**
+- **Clear section headers and labels**
+- **Logical form flow from top to bottom**
+
+### Interactive Elements
+- **Add/Remove buttons with smooth animations**
+- **Toggle switches with clear on/off states**
+- **File upload with drag-and-drop support (optional enhancement)**
+- **Progress indicators during form submission**
+- **Loading states for better user feedback**
+
+### Accessibility
+- **Proper form labels and ARIA attributes**
+- **Keyboard navigation support**
+- **Screen reader compatibility**
+- **High contrast color scheme**
+
+## Additional Features & Considerations
+
+### Error Handling
+- **Comprehensive client-side validation**
+- **Clear error messages with specific guidance**
+- **Form field highlighting for validation errors**
+- **Network error handling for webhook submission**
+
+### Performance
+- **Fast loading times**
+- **Efficient DOM manipulation**
+- **Optimized file handling**
+- **Minimal external dependencies**
+
+### Browser Compatibility
+- **Modern browsers (Chrome, Firefox, Safari, Edge)**
+- **Graceful degradation for older browsers**
+- **Cross-platform compatibility**
+
+## Development Notes
+- Use semantic HTML5 elements for better structure
+- Implement progressive enhancement principles
+- Ensure the form works without JavaScript (basic functionality)
+- Consider implementing local storage for form data persistence
+- Test thoroughly with various file types and sizes
+- Validate JSON structure before webhook submission
+
+## Success Criteria
+1. Form submits successfully to n8n webhook
+2. All dynamic list functionality works correctly
+3. File upload handles size limits properly based on toggle
+4. Data validation prevents invalid submissions
+5. JSON output matches specified structure exactly
+6. Form is fully responsive and accessible
+7. User experience is smooth and intuitive
+
+Build this form with clean, maintainable code that can be easily modified or extended in the future.
