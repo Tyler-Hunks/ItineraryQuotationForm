@@ -28,7 +28,7 @@ export function FileUpload({
   value, 
   onChange, 
   maxSize = 10 * 1024 * 1024, 
-  accept = ".pdf,.doc,.docx",
+  accept = ".pdf,.doc,.docx,.xlsx,.md",
   testId,
   required = false,
   isInvalid = false,
@@ -62,7 +62,7 @@ export function FileUpload({
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     
     if (!allowedTypes.includes(fileExtension)) {
-      return 'Invalid file type. Please upload PDF, DOC, or DOCX files only.';
+      return 'Invalid file type. Please upload PDF, DOC, DOCX, XLSX, or MD files only.';
     }
 
     if (maxSize && file.size > maxSize) {
@@ -242,7 +242,7 @@ export function FileUpload({
                   dragActive ? 'opacity-50' : 'opacity-100'
                 }`}
               >
-                PDF, DOC, DOCX up to {maxSize ? formatFileSize(maxSize) : 'unlimited'}
+                PDF, DOC, DOCX, XLSX, MD up to {maxSize ? formatFileSize(maxSize) : 'unlimited'}
               </div>
             </div>
           </CardContent>

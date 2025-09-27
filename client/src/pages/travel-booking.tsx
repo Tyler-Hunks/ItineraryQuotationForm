@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -44,6 +45,7 @@ const saveFormData = (data: TravelBookingForm) => {
                    data.meals_provided || 
                    data.flight_information || 
                    data.uploaded_file ||
+                   (data.itinerary_language && data.itinerary_language !== "English") ||
                    (data.tour_fair_includes && data.tour_fair_includes.length > presetIncludes.length) ||
                    (data.tour_fair_excludes && data.tour_fair_excludes.length > presetExcludes.length);
                    
@@ -121,6 +123,7 @@ export default function TravelBooking() {
   const [hasRestoredData, setHasRestoredData] = useState(false);
   const [hadFileBeforeRestore, setHadFileBeforeRestore] = useState(false);
   const [isSubmittingSuccessfully, setIsSubmittingSuccessfully] = useState(false);
+  const [customLanguage, setCustomLanguage] = useState("");
 
   // Initialize form with potential restored data
   const getInitialValues = useCallback((): TravelBookingForm => {
@@ -135,7 +138,8 @@ export default function TravelBooking() {
         tour_fair_includes: data.tour_fair_includes || presetIncludes,
         tour_fair_excludes: data.tour_fair_excludes || presetExcludes,
         uploaded_file: null, // Always null - files can't be persisted
-        file_size_limit_enabled: data.file_size_limit_enabled !== undefined ? data.file_size_limit_enabled : true
+        file_size_limit_enabled: data.file_size_limit_enabled !== undefined ? data.file_size_limit_enabled : true,
+        itinerary_language: data.itinerary_language || "English"
       };
     }
     
@@ -146,7 +150,8 @@ export default function TravelBooking() {
       tour_fair_includes: presetIncludes,
       tour_fair_excludes: presetExcludes,
       uploaded_file: null,
-      file_size_limit_enabled: true
+      file_size_limit_enabled: true,
+      itinerary_language: "English"
     };
   }, []);
 
@@ -248,7 +253,8 @@ export default function TravelBooking() {
         tour_fair_includes: presetIncludes,
         tour_fair_excludes: presetExcludes,
         uploaded_file: null,
-        file_size_limit_enabled: true
+        file_size_limit_enabled: true,
+        itinerary_language: "English"
       });
       setFileSizeLimit(true);
       
@@ -275,7 +281,8 @@ export default function TravelBooking() {
       tour_fair_includes: data.tour_fair_includes,
       tour_fair_excludes: data.tour_fair_excludes,
       uploaded_file: data.uploaded_file,
-      file_size_limit_enabled: fileSizeLimit
+      file_size_limit_enabled: fileSizeLimit,
+      itinerary_language: data.itinerary_language
     };
 
     submitMutation.mutate(submissionData);
@@ -340,7 +347,7 @@ export default function TravelBooking() {
         {/* Header */}
         <header className="text-center mb-8" role="banner">
           <div className="flex items-center justify-center space-x-3 mb-2">
-            <h1 className="text-3xl font-bold text-foreground" id="main-heading">Travel Booking Form</h1>
+            <h1 className="text-3xl font-bold text-foreground" id="main-heading">Itinerary Quotation</h1>
             {!isRestoringData && (
               <div className="flex items-center space-x-2 text-sm">
                 {isSaving ? (
@@ -366,7 +373,7 @@ export default function TravelBooking() {
           )}
         </header>
 
-        {/* Travel Booking Form */}
+        {/* Itinerary Quotation */}
         <Card className="shadow-lg">
           <CardContent className="p-8" id="main-content">
             <Form {...form}>
@@ -464,6 +471,62 @@ export default function TravelBooking() {
                         </FormControl>
                         <p id="flight-help" className="text-sm text-muted-foreground">
                           Include flight numbers, departure/arrival times, airline names, and destinations. This helps us better assist with your travel needs.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </section>
+
+                {/* Itinerary Language Section */}
+                <section className="space-y-4" aria-labelledby="language-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="language-section-heading">Itinerary Language</h2>
+                  <FormField
+                    control={form.control}
+                    name="itinerary_language"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preferred Language for Itinerary <span className="text-destructive" aria-label="required">*</span></FormLabel>
+                        <FormControl>
+                          <div className="space-y-3">
+                            <Select
+                              onValueChange={(value) => {
+                                if (value === "other") {
+                                  field.onChange("");
+                                  setCustomLanguage("");
+                                } else {
+                                  field.onChange(value);
+                                  setCustomLanguage("");
+                                }
+                              }}
+                              value={["English", "Mandarin"].includes(field.value) ? field.value : "other"}
+                              aria-describedby="language-help"
+                            >
+                              <SelectTrigger data-testid="select-language">
+                                <SelectValue placeholder="Select language" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="English">English</SelectItem>
+                                <SelectItem value="Mandarin">Mandarin</SelectItem>
+                                <SelectItem value="other">Other (specify below)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            
+                            {!["English", "Mandarin"].includes(field.value) && (
+                              <Input
+                                placeholder="Enter your preferred language"
+                                value={field.value}
+                                onChange={(e) => {
+                                  field.onChange(e.target.value);
+                                }}
+                                data-testid="input-custom-language"
+                                aria-label="Custom language input"
+                              />
+                            )}
+                          </div>
+                        </FormControl>
+                        <p id="language-help" className="text-sm text-muted-foreground">
+                          Select the language you prefer for your travel itinerary documentation
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -570,7 +633,7 @@ export default function TravelBooking() {
                             value={field.value}
                             onChange={field.onChange}
                             maxSize={fileSizeLimit ? 10 * 1024 * 1024 : undefined}
-                            accept=".pdf,.doc,.docx"
+                            accept=".pdf,.doc,.docx,.xlsx,.md"
                             testId="input-file-upload"
                             required={true}
                             isInvalid={!!form.formState.errors.uploaded_file}

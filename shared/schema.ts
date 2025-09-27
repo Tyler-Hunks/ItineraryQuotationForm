@@ -12,7 +12,8 @@ export const travelBookingSchema = z.object({
     type: z.string(),
     data: z.string()
   }).nullable(),
-  file_size_limit_enabled: z.boolean()
+  file_size_limit_enabled: z.boolean(),
+  itinerary_language: z.string()
 });
 
 export type TravelBooking = z.infer<typeof travelBookingSchema>;
@@ -30,7 +31,8 @@ export const travelBookingFormSchema = z.object({
     type: z.string(),
     data: z.string()
   }).nullable().refine((file) => file !== null, "Document upload is required"),
-  file_size_limit_enabled: z.boolean()
+  file_size_limit_enabled: z.boolean(),
+  itinerary_language: z.string().min(1, "Please select or enter an itinerary language")
 });
 
 export type TravelBookingForm = z.infer<typeof travelBookingFormSchema>;

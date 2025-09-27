@@ -29,11 +29,9 @@ export function DynamicList({
   };
 
   const removeItem = (index: number) => {
-    // Only allow removal of items beyond the preset items
-    if (index >= presetItems.length) {
-      const newItems = items.filter((_, i) => i !== index);
-      onChange(newItems);
-    }
+    // Allow removal of any item, including preset items
+    const newItems = items.filter((_, i) => i !== index);
+    onChange(newItems);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -56,10 +54,10 @@ export function DynamicList({
               <span className="text-primary font-medium mt-2" data-testid="text-item-letter" aria-hidden="true">
                 {getLetter(index)})
               </span>
-              {index < presetItems.length ? (
-                <span className="text-card-foreground flex-1 py-2">{item}</span>
-              ) : (
-                <div className="flex-1 flex items-center space-x-2">
+              <div className="flex-1 flex items-center space-x-2">
+                {index < presetItems.length ? (
+                  <span className="text-card-foreground flex-1 py-2">{item}</span>
+                ) : (
                   <Input
                     value={item}
                     onChange={(e) => {
@@ -71,19 +69,19 @@ export function DynamicList({
                     data-testid="input-custom-item"
                     aria-label={`Edit custom item ${getLetter(index)}`}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeItem(index)}
-                    className="text-destructive hover:text-destructive/80"
-                    data-testid="button-remove-item"
-                    aria-label={`Remove custom item ${getLetter(index)}`}
-                  >
-                    <X className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </div>
-              )}
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeItem(index)}
+                  className="text-destructive hover:text-destructive/80"
+                  data-testid={index < presetItems.length ? "button-remove-preset" : "button-remove-item"}
+                  aria-label={`Remove ${index < presetItems.length ? 'preset' : 'custom'} item ${getLetter(index)}`}
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
             </div>
           ))}
         </div>
