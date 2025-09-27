@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, File, X, CheckCircle } from "lucide-react";
+import { Upload, File, X, CheckCircle, FileText, Download } from "lucide-react";
 
 interface FileUploadProps {
   value: {
@@ -29,8 +29,11 @@ export function FileUpload({
   testId 
 }: FileUploadProps) {
   const [dragOver, setDragOver] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
 
   // Clear file input when value becomes null (form reset)
   useEffect(() => {
@@ -77,10 +80,12 @@ export function FileUpload({
 
   const handleFile = async (file: File) => {
     setError(null);
+    setIsProcessing(true);
     
     const validationError = validateFile(file);
     if (validationError) {
       setError(validationError);
+      setIsProcessing(false);
       return;
     }
 
@@ -94,6 +99,8 @@ export function FileUpload({
       });
     } catch (err) {
       setError('Failed to process file');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -106,7 +113,11 @@ export function FileUpload({
 
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault();
+    event.stopPropagation();
+    
     setDragOver(false);
+    setDragActive(false);
+    dragCounter.current = 0;
     
     const file = event.dataTransfer.files[0];
     if (file) {
@@ -114,14 +125,31 @@ export function FileUpload({
     }
   };
 
+  const handleDragEnter = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragCounter.current++;
+    
+    if (event.dataTransfer.items && event.dataTransfer.items.length > 0) {
+      setDragActive(true);
+    }
+  };
+
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
+    event.stopPropagation();
     setDragOver(true);
   };
 
   const handleDragLeave = (event: React.DragEvent) => {
     event.preventDefault();
-    setDragOver(false);
+    event.stopPropagation();
+    dragCounter.current--;
+    
+    if (dragCounter.current === 0) {
+      setDragActive(false);
+      setDragOver(false);
+    }
   };
 
   const removeFile = () => {
@@ -149,51 +177,103 @@ export function FileUpload({
 
       {!value ? (
         <Card
-          className={`border-2 border-dashed transition-colors duration-200 cursor-pointer ${
-            dragOver 
-              ? 'border-primary bg-accent' 
-              : 'border-border hover:border-primary'
-          }`}
+          className={`border-2 border-dashed transition-all duration-300 cursor-pointer transform ${
+            dragActive && dragOver 
+              ? 'border-primary bg-primary/10 scale-105 shadow-lg' 
+              : dragActive
+              ? 'border-primary/50 bg-accent scale-102'
+              : 'border-border hover:border-primary hover:bg-accent/50'
+          } ${isProcessing ? 'pointer-events-none opacity-70' : ''}`}
           onDrop={handleDrop}
+          onDragEnter={handleDragEnter}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={openFileDialog}
         >
           <CardContent className="p-8 text-center">
-            <div className="flex flex-col items-center space-y-2">
-              <Upload className="w-12 h-12 text-muted-foreground" />
-              <div className="text-card-foreground">
-                <span className="font-medium">Click to upload</span> or drag and drop
+            <div className="flex flex-col items-center space-y-3">
+              <div className={`transition-all duration-300 ${dragActive && dragOver ? 'scale-110' : 'scale-100'}`}>
+                {isProcessing ? (
+                  <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Upload className={`w-12 h-12 transition-colors duration-300 ${
+                    dragActive && dragOver ? 'text-primary' : 'text-muted-foreground'
+                  }`} />
+                )}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-card-foreground">
+                <span className="font-medium">
+                  {isProcessing ? 'Processing file...' : 'Click to upload'}
+                </span>
+                {!isProcessing && (
+                  <span className={`transition-opacity duration-300 ${
+                    dragActive ? 'opacity-0' : 'opacity-100'
+                  }`}>
+                    {' '}or drag and drop
+                  </span>
+                )}
+              </div>
+              {dragActive && dragOver && (
+                <div className="text-primary font-medium animate-pulse">
+                  Drop your file here!
+                </div>
+              )}
+              <div className={`text-sm text-muted-foreground transition-opacity duration-300 ${
+                dragActive ? 'opacity-50' : 'opacity-100'
+              }`}>
                 PDF, DOC, DOCX up to {maxSize ? formatFileSize(maxSize) : 'unlimited'}
               </div>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <Card className="bg-accent" data-testid="display-file-info">
-          <CardContent className="p-3">
+        <Card className="bg-accent border-primary/30 animate-in slide-in-from-bottom-2 duration-300" data-testid="display-file-info">
+          <CardContent className="p-4">
             <div className="flex items-center space-x-3">
-              <CheckCircle className="w-5 h-5 text-primary" />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-accent-foreground" data-testid="text-file-name">
-                  {value.filename}
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-full animate-pulse"></div>
+                <CheckCircle className="w-6 h-6 text-primary relative z-10" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2">
+                  <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                  <div className="text-sm font-medium text-accent-foreground truncate" data-testid="text-file-name">
+                    {value.filename}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground" data-testid="text-file-size">
-                  {formatFileSize(value.size)}
+                <div className="text-xs text-muted-foreground mt-1" data-testid="text-file-size">
+                  {formatFileSize(value.size)} • {value.type || 'Unknown type'}
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={removeFile}
-                className="text-destructive hover:text-destructive/80"
-                data-testid="button-remove-file"
-              >
-                <X className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center space-x-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    // Create a simple preview/download functionality
+                    const link = document.createElement('a');
+                    link.href = `data:${value.type};base64,${value.data}`;
+                    link.download = value.filename;
+                    link.click();
+                  }}
+                  className="text-primary hover:text-primary/80"
+                  title="Download file"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeFile}
+                  className="text-destructive hover:text-destructive/80"
+                  data-testid="button-remove-file"
+                  title="Remove file"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
