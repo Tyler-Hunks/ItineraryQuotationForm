@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, KeyboardEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -281,13 +281,66 @@ export default function TravelBooking() {
     submitMutation.mutate(submissionData);
   };
 
+  // Keyboard navigation helper
+  const handleFormKeyDown = useCallback((e: KeyboardEvent<HTMLFormElement>) => {
+    // Skip button navigation with Escape key to reset focus to form
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      (e.currentTarget as HTMLFormElement).focus();
+    }
+    
+    // Allow users to navigate between sections with Ctrl+Arrow keys
+    if (e.ctrlKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      const sections = e.currentTarget.querySelectorAll('section[aria-labelledby]');
+      const currentElement = document.activeElement;
+      
+      if (currentElement && sections.length > 0) {
+        // Find which section contains the currently focused element
+        let currentSectionIndex = -1;
+        sections.forEach((section, index) => {
+          if (section.contains(currentElement)) {
+            currentSectionIndex = index;
+          }
+        });
+        
+        // Navigate to next/previous section
+        if (currentSectionIndex >= 0) {
+          const nextIndex = e.key === 'ArrowDown' 
+            ? Math.min(currentSectionIndex + 1, sections.length - 1)
+            : Math.max(currentSectionIndex - 1, 0);
+          
+          const nextSection = sections[nextIndex];
+          const firstInput = nextSection.querySelector('input, textarea, button, [tabindex="0"]') as HTMLElement;
+          if (firstInput) {
+            firstInput.focus();
+          }
+        }
+      }
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip Links for Screen Readers */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
+      <a 
+        href="#submit-button" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-40 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded focus:shadow-lg"
+      >
+        Skip to submit
+      </a>
+      
       <div className="container mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
-        <header className="text-center mb-8">
+        <header className="text-center mb-8" role="banner">
           <div className="flex items-center justify-center space-x-3 mb-2">
-            <h1 className="text-3xl font-bold text-foreground">Travel Booking Form</h1>
+            <h1 className="text-3xl font-bold text-foreground" id="main-heading">Travel Booking Form</h1>
             {!isRestoringData && (
               <div className="flex items-center space-x-2 text-sm">
                 {isSaving ? (
@@ -304,7 +357,7 @@ export default function TravelBooking() {
               </div>
             )}
           </div>
-          <p className="text-muted-foreground text-lg">Complete your travel booking details below</p>
+          <p className="text-muted-foreground text-lg" aria-describedby="main-heading">Complete your travel booking details below</p>
           {hasRestoredData && (
             <div className="mt-3 inline-flex items-center space-x-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm">
               <AlertCircle className="w-4 h-4" />
@@ -315,13 +368,20 @@ export default function TravelBooking() {
 
         {/* Travel Booking Form */}
         <Card className="shadow-lg">
-          <CardContent className="p-8">
+          <CardContent className="p-8" id="main-content">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <form 
+                onSubmit={form.handleSubmit(onSubmit)} 
+                onKeyDown={handleFormKeyDown}
+                className="space-y-8"
+                aria-labelledby="main-heading"
+                noValidate
+                tabIndex={-1}
+              >
                 
                 {/* Date Section */}
-                <section className="space-y-4">
-                  <h2 className="text-xl font-semibold text-card-foreground">Travel Date</h2>
+                <section className="space-y-4" aria-labelledby="date-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="date-section-heading">Travel Date</h2>
                   <FormField
                     control={form.control}
                     name="starting_date"
@@ -333,8 +393,15 @@ export default function TravelBooking() {
                             type="date" 
                             {...field} 
                             data-testid="input-starting-date"
+                            aria-describedby={field.value ? undefined : "date-help"}
+                            placeholder="Select your travel start date"
                           />
                         </FormControl>
+                        {!field.value && (
+                          <p id="date-help" className="text-sm text-muted-foreground">
+                            Choose the date your travel begins
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -342,8 +409,8 @@ export default function TravelBooking() {
                 </section>
 
                 {/* Meals Section */}
-                <section className="space-y-4">
-                  <h2 className="text-xl font-semibold text-card-foreground">Meal Options</h2>
+                <section className="space-y-4" aria-labelledby="meals-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="meals-section-heading">Meal Options</h2>
                   <FormField
                     control={form.control}
                     name="meals_provided"
@@ -355,6 +422,7 @@ export default function TravelBooking() {
                             onValueChange={(value) => field.onChange(value === "yes")}
                             value={field.value ? "yes" : "no"}
                             className="flex space-x-6"
+                            aria-describedby="meals-help"
                           >
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="yes" id="meals-yes" data-testid="radio-meals-yes" />
@@ -366,6 +434,9 @@ export default function TravelBooking() {
                             </div>
                           </RadioGroup>
                         </FormControl>
+                        <p id="meals-help" className="text-sm text-muted-foreground">
+                          Select whether meals are included in your travel package
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -373,8 +444,8 @@ export default function TravelBooking() {
                 </section>
 
                 {/* Flight Info Section */}
-                <section className="space-y-4">
-                  <h2 className="text-xl font-semibold text-card-foreground">Flight Information</h2>
+                <section className="space-y-4" aria-labelledby="flight-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="flight-section-heading">Flight Information</h2>
                   <FormField
                     control={form.control}
                     name="flight_information"
@@ -388,8 +459,12 @@ export default function TravelBooking() {
                             rows={6}
                             {...field}
                             data-testid="textarea-flight-info"
+                            aria-describedby="flight-help"
                           />
                         </FormControl>
+                        <p id="flight-help" className="text-sm text-muted-foreground">
+                          Include flight numbers, departure/arrival times, airline names, and destinations. This helps us better assist with your travel needs.
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -397,8 +472,8 @@ export default function TravelBooking() {
                 </section>
 
                 {/* Tour Fair Includes Section */}
-                <section className="space-y-4">
-                  <h2 className="text-xl font-semibold text-card-foreground">Tour Fair Includes</h2>
+                <section className="space-y-4" aria-labelledby="includes-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="includes-section-heading">Tour Fair Includes</h2>
                   <FormField
                     control={form.control}
                     name="tour_fair_includes"
@@ -420,8 +495,8 @@ export default function TravelBooking() {
                 </section>
 
                 {/* Tour Fair Excludes Section */}
-                <section className="space-y-4">
-                  <h2 className="text-xl font-semibold text-card-foreground">Tour Fair Excludes</h2>
+                <section className="space-y-4" aria-labelledby="excludes-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="excludes-section-heading">Tour Fair Excludes</h2>
                   <FormField
                     control={form.control}
                     name="tour_fair_excludes"
@@ -443,9 +518,9 @@ export default function TravelBooking() {
                 </section>
 
                 {/* File Upload Section */}
-                <section className="space-y-4">
-                  <h2 className="text-xl font-semibold text-card-foreground">
-                    Document Upload <span className="text-destructive">*</span>
+                <section className="space-y-4" aria-labelledby="upload-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="upload-section-heading">
+                    Document Upload <span className="text-destructive" aria-label="required">*</span>
                   </h2>
                   
                   {/* File size limit toggle */}
@@ -456,7 +531,7 @@ export default function TravelBooking() {
                           <Label className="text-sm font-medium text-accent-foreground">
                             10MB File Size Limit
                           </Label>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-muted-foreground mt-1" id="file-limit-description">
                             Toggle to enable/disable 10MB file size restriction
                           </p>
                         </div>
@@ -464,6 +539,8 @@ export default function TravelBooking() {
                           checked={fileSizeLimit}
                           onCheckedChange={setFileSizeLimit}
                           data-testid="toggle-file-size-limit"
+                          aria-describedby="file-limit-description"
+                          aria-label="Toggle 10MB file size limit"
                         />
                       </div>
                     </CardContent>
@@ -475,7 +552,7 @@ export default function TravelBooking() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Upload Travel Itinerary <span className="text-destructive">*</span>
+                          Upload Travel Itinerary <span className="text-destructive" aria-label="required">*</span>
                         </FormLabel>
                         {hadFileBeforeRestore && !field.value && (
                           <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
@@ -495,22 +572,27 @@ export default function TravelBooking() {
                             maxSize={fileSizeLimit ? 10 * 1024 * 1024 : undefined}
                             accept=".pdf,.doc,.docx"
                             testId="input-file-upload"
+                            required={true}
+                            isInvalid={!!form.formState.errors.uploaded_file}
+                            errorId={form.formState.errors.uploaded_file ? "upload-error" : undefined}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage id="upload-error" />
                       </FormItem>
                     )}
                   />
                 </section>
 
                 {/* Submit Section */}
-                <section className="pt-6 border-t border-border">
+                <section className="pt-6 border-t border-border" aria-labelledby="submit-section">
                   <Button 
                     type="submit" 
                     className="w-full"
                     size="lg"
                     disabled={submitMutation.isPending}
                     data-testid="button-submit"
+                    aria-describedby="submit-help"
+                    id="submit-button"
                   >
                     {submitMutation.isPending ? (
                       <>
@@ -521,6 +603,9 @@ export default function TravelBooking() {
                       "Submit Booking Form"
                     )}
                   </Button>
+                  <p id="submit-help" className="text-sm text-muted-foreground text-center mt-3">
+                    By submitting this form, you agree to our terms and conditions. Your information will be processed securely.
+                  </p>
                 </section>
 
               </form>

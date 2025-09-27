@@ -19,6 +19,9 @@ interface FileUploadProps {
   maxSize?: number;
   accept?: string;
   testId?: string;
+  required?: boolean;
+  isInvalid?: boolean;
+  errorId?: string;
 }
 
 export function FileUpload({ 
@@ -26,7 +29,10 @@ export function FileUpload({
   onChange, 
   maxSize = 10 * 1024 * 1024, 
   accept = ".pdf,.doc,.docx",
-  testId 
+  testId,
+  required = false,
+  isInvalid = false,
+  errorId
 }: FileUploadProps) {
   const [dragOver, setDragOver] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -189,6 +195,18 @@ export function FileUpload({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={openFileDialog}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openFileDialog();
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          aria-label="Upload file by clicking or dropping"
+          aria-describedby={`upload-instructions${error ? ` ${errorId || "file-upload-error"}` : (errorId ? ` ${errorId}` : '')}`}
+          aria-required={required}
+          aria-invalid={isInvalid || !!error}
         >
           <CardContent className="p-8 text-center">
             <div className="flex flex-col items-center space-y-3">
@@ -218,16 +236,24 @@ export function FileUpload({
                   Drop your file here!
                 </div>
               )}
-              <div className={`text-sm text-muted-foreground transition-opacity duration-300 ${
-                dragActive ? 'opacity-50' : 'opacity-100'
-              }`}>
+              <div 
+                id="upload-instructions"
+                className={`text-sm text-muted-foreground transition-opacity duration-300 ${
+                  dragActive ? 'opacity-50' : 'opacity-100'
+                }`}
+              >
                 PDF, DOC, DOCX up to {maxSize ? formatFileSize(maxSize) : 'unlimited'}
               </div>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <Card className="bg-accent border-primary/30 animate-in slide-in-from-bottom-2 duration-300" data-testid="display-file-info">
+        <Card 
+          className="bg-accent border-primary/30 animate-in slide-in-from-bottom-2 duration-300" 
+          data-testid="display-file-info"
+          role="status"
+          aria-live="polite"
+        >
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <div className="relative">
@@ -258,9 +284,10 @@ export function FileUpload({
                     link.click();
                   }}
                   className="text-primary hover:text-primary/80"
-                  title="Download file"
+                  aria-label={`Download file ${value.filename}`}
+                  data-testid="button-download-file"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-4 h-4" aria-hidden="true" />
                 </Button>
                 <Button
                   type="button"
@@ -269,9 +296,9 @@ export function FileUpload({
                   onClick={removeFile}
                   className="text-destructive hover:text-destructive/80"
                   data-testid="button-remove-file"
-                  title="Remove file"
+                  aria-label={`Remove file ${value.filename}`}
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </Button>
               </div>
             </div>
@@ -280,7 +307,12 @@ export function FileUpload({
       )}
 
       {error && (
-        <div className="text-destructive text-sm mt-1">
+        <div 
+          className="text-destructive text-sm mt-1" 
+          role="alert" 
+          aria-live="assertive"
+          id={errorId || "file-upload-error"}
+        >
           {error}
         </div>
       )}

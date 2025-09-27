@@ -50,10 +50,10 @@ export function DynamicList({
   return (
     <Card className="bg-muted">
       <CardContent className="p-6 space-y-3">
-        <div className="space-y-2" data-testid={testId}>
+        <div className="space-y-2" data-testid={testId} role="list" aria-label="Tour fair items list">
           {items.map((item, index) => (
-            <div key={index} className="flex items-start space-x-3">
-              <span className="text-primary font-medium mt-2" data-testid="text-item-letter">
+            <div key={index} className="flex items-start space-x-3" role="listitem">
+              <span className="text-primary font-medium mt-2" data-testid="text-item-letter" aria-hidden="true">
                 {getLetter(index)})
               </span>
               {index < presetItems.length ? (
@@ -69,6 +69,7 @@ export function DynamicList({
                     }}
                     className="text-sm"
                     data-testid="input-custom-item"
+                    aria-label={`Edit custom item ${getLetter(index)}`}
                   />
                   <Button
                     type="button"
@@ -77,8 +78,9 @@ export function DynamicList({
                     onClick={() => removeItem(index)}
                     className="text-destructive hover:text-destructive/80"
                     data-testid="button-remove-item"
+                    aria-label={`Remove custom item ${getLetter(index)}`}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </div>
               )}
@@ -94,16 +96,22 @@ export function DynamicList({
             placeholder="Enter custom item..."
             className="text-sm"
             data-testid="input-new-item"
+            aria-label="Enter new custom item"
+            aria-describedby="add-item-help"
           />
           <Button
             type="button"
             onClick={addItem}
             variant="secondary"
             data-testid={addButtonTestId}
+            aria-describedby="add-item-help"
           >
             + Add Item
           </Button>
         </div>
+        <p id="add-item-help" className="text-xs text-muted-foreground mt-2">
+          Press Enter or click Add Item to add a new custom entry to the list
+        </p>
       </CardContent>
     </Card>
   );
