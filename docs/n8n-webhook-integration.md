@@ -29,19 +29,57 @@ The application automatically forwards form submissions to n8n using environment
    - Leave path empty or customize (e.g., `/travel-booking`)
    - Note: n8n will generate a unique webhook URL
 
-### Step 2: Configure Webhook Node
+### Step 2: Configure Webhook Node in n8n
 
-**Authentication (Optional):**
-- Go to webhook node settings
-- You can add authentication if needed:
-  - **Header Auth**: Add custom header like `X-API-Key: your-secret-key`
-  - **Basic Auth**: Username/password combination
-  - **Query Auth**: Add secret parameter to URL
-- **Note**: The current implementation sends only `Content-Type: application/json` header. If you enable authentication in n8n, you'll need to modify the backend code to include the required authentication headers.
+When you add the Webhook node to your n8n workflow, you'll need to configure several settings. Here's exactly what to set:
 
-**Response Configuration:**
-- Choose "When Last Node Finishes" to send custom response
-- Or use "Immediately" for faster response (recommended)
+#### **Basic Settings Tab:**
+
+| Field | What to Set | Recommendation |
+|-------|-------------|----------------|
+| **HTTP Method** | `POST` | ✅ Required - form sends POST requests |
+| **Path** | Leave empty or custom path | Empty is fine (n8n generates unique URL) |
+| **Authentication** | `None` | ⚠️ See authentication section below |
+| **Response Mode** | `On Received` | ✅ Recommended - fastest response |
+| **Response Code** | `200` | Default is fine |
+| **Response Data** | `First Entry JSON` | Default is fine |
+
+#### **Advanced Settings (Optional):**
+
+| Setting | Recommended Value | Why |
+|---------|------------------|-----|
+| **Ignore Bots** | `false` | Don't filter legitimate requests |
+| **Binary Property** | Leave default | Not needed for this form |
+| **Options** | Leave default | Standard settings work fine |
+
+#### **Authentication Setup (Optional but Recommended for Production):**
+
+⚠️ **Important**: The travel booking form currently sends requests **without authentication headers**. 
+
+**For Testing/Development:**
+- Set Authentication to `None` in the webhook node
+- This allows immediate testing without code changes
+
+**For Production:**
+If you want to secure your webhook:
+1. In n8n webhook node, set **Authentication** to `Header Auth`
+2. Add a custom header like:
+   - **Header Name**: `X-API-Key`
+   - **Header Value**: `your-secret-api-key-here` (generate a strong random key)
+3. **You'll need to modify the backend code** to include this header (see Security section)
+
+#### **Response Configuration:**
+
+| Setting | Recommended | Alternative |
+|---------|------------|-------------|
+| **When to Respond** | `On Received` | `When Last Node Finishes` |
+| **Why "On Received"** | ✅ Form gets instant confirmation | Waits for entire workflow |
+| **Best for** | Long workflows (email, database, file processing) | Short workflows that return data |
+
+**Set this to "On Received" (also called "Immediately") so:**
+- Users get instant feedback after form submission
+- Your workflow can take time processing without blocking the form
+- Even if workflow fails later, users don't see errors
 
 ### Step 3: Get Your Webhook URL
 
@@ -70,11 +108,111 @@ Set environment variable:
 N8N_WEBHOOK_URL=https://your-n8n.app/webhook/your-webhook-id
 ```
 
-### Step 5: Test the Integration
+### Step 5: Access Webhook Data in Your n8n Workflow
+
+Once the webhook receives data, you need to know how to access it in subsequent nodes. Here's a complete reference:
+
+#### **Accessing Form Fields:**
+
+In any node after your webhook, use these expressions to access the form data:
+
+| Form Field | n8n Expression | Example Value |
+|------------|----------------|---------------|
+| **Travel Start Date** | `{{ $node.Webhook.json.starting_date }}` | `"2024-12-25"` or `null` |
+| **Meals Provided** | `{{ $node.Webhook.json.meals_provided }}` | `true` or `false` |
+| **Flight Information** | `{{ $node.Webhook.json.flight_information }}` | `"Flight SQ123..."` |
+| **Tour Includes (Array)** | `{{ $node.Webhook.json.tour_fair_includes }}` | Array of strings |
+| **Tour Excludes (Array)** | `{{ $node.Webhook.json.tour_fair_excludes }}` | Array of strings |
+| **Uploaded File Object** | `{{ $node.Webhook.json.uploaded_file }}` | Object or `null` |
+| **File Size Limit Enabled** | `{{ $node.Webhook.json.file_size_limit_enabled }}` | `true` or `false` |
+| **Language Preference** | `{{ $node.Webhook.json.itinerary_language }}` | `"English"`, `"Mandarin"`, etc. |
+
+#### **Working with Arrays:**
+
+The includes and excludes are arrays. Here's how to use them:
+
+**To join into comma-separated text:**
+```javascript
+{{ $node.Webhook.json.tour_fair_includes.join(', ') }}
+// Output: "Return air fare, Stay 05 Night, Private touring..."
+```
+
+**To join into bullet list:**
+```javascript
+{{ $node.Webhook.json.tour_fair_includes.join('\n• ') }}
+// Output:
+// • Return air fare
+// • Stay 05 Night
+// • Private touring...
+```
+
+**To count items:**
+```javascript
+{{ $node.Webhook.json.tour_fair_includes.length }}
+// Output: 7 (number of items)
+```
+
+**To access specific item:**
+```javascript
+{{ $node.Webhook.json.tour_fair_includes[0] }}
+// Output: "Return International air fare..."
+```
+
+#### **Working with Uploaded Files:**
+
+**Check if file exists:**
+```javascript
+{{ $node.Webhook.json.uploaded_file !== null }}
+// Returns: true or false
+```
+
+**Get filename:**
+```javascript
+{{ $node.Webhook.json.uploaded_file.filename }}
+// Example: "passport.pdf"
+```
+
+**Get file size (in bytes):**
+```javascript
+{{ $node.Webhook.json.uploaded_file.size }}
+// Example: 245760 (240 KB)
+```
+
+**Get file type:**
+```javascript
+{{ $node.Webhook.json.uploaded_file.type }}
+// Example: "application/pdf"
+```
+
+**Get base64 file data (for saving to cloud storage):**
+```javascript
+{{ $node.Webhook.json.uploaded_file.data }}
+// Base64 encoded file content
+```
+
+#### **Conditional Logic Examples:**
+
+**Check if meals are included:**
+```javascript
+{{ $node.Webhook.json.meals_provided ? 'Meals Included' : 'Meals Not Included' }}
+```
+
+**Check if date is set:**
+```javascript
+{{ $node.Webhook.json.starting_date ? 'Date: ' + $node.Webhook.json.starting_date : 'No date provided' }}
+```
+
+**Check language and customize message:**
+```javascript
+{{ $node.Webhook.json.itinerary_language === 'Mandarin' ? '您好' : 'Hello' }}
+```
+
+### Step 6: Test the Integration
 
 1. **Submit a test form** with sample data
 2. **Check n8n workflow execution** in your n8n dashboard
 3. **Verify data structure** matches expected format (see below)
+4. **Check that you can access fields** using the expressions above
 
 ## Data Structure Sent to n8n
 
@@ -114,6 +252,66 @@ Your n8n workflow receives a JSON payload with the following structure:
 - `uploaded_file`: File object with base64 encoded content (or null)
 - `file_size_limit_enabled`: Boolean for file size limit setting
 - `itinerary_language`: Preferred language (English, Mandarin, or custom)
+
+## Quick Start: Your First n8n Workflow
+
+Here's a simple complete workflow to get you started in 5 minutes:
+
+### **Goal**: Receive form → Send email notification → Save to Google Sheets
+
+**Step-by-step setup:**
+
+1. **Add Webhook Node** (Already covered in Step 1-2 above)
+   - HTTP Method: `POST`
+   - Authentication: `None`
+   - Response Mode: `On Received`
+
+2. **Add Gmail Node** (Send notification)
+   - Click `+` button → Search "Gmail"
+   - Configure:
+     - **To**: `your-email@company.com`
+     - **Subject**: `New Travel Booking - {{ $node.Webhook.json.starting_date }}`
+     - **Email Type**: `Text` or `HTML`
+     - **Message**:
+       ```
+       New travel booking received!
+       
+       Travel Date: {{ $node.Webhook.json.starting_date }}
+       Language: {{ $node.Webhook.json.itinerary_language }}
+       Meals: {{ $node.Webhook.json.meals_provided ? 'Included' : 'Not Included' }}
+       
+       Flight Info:
+       {{ $node.Webhook.json.flight_information }}
+       
+       Tour Includes:
+       {{ $node.Webhook.json.tour_fair_includes.join('\n• ') }}
+       
+       File Attached: {{ $node.Webhook.json.uploaded_file ? $node.Webhook.json.uploaded_file.filename : 'None' }}
+       ```
+
+3. **Add Google Sheets Node** (Save data)
+   - Click `+` button → Search "Google Sheets"
+   - Configure:
+     - **Credential**: Connect your Google account
+     - **Operation**: `Append`
+     - **Document**: Select your spreadsheet
+     - **Sheet**: Select sheet name
+     - **Columns**: Map fields like this:
+       - **Column A (Date)**: `{{ $now }}`
+       - **Column B (Travel Date)**: `{{ $node.Webhook.json.starting_date }}`
+       - **Column C (Language)**: `{{ $node.Webhook.json.itinerary_language }}`
+       - **Column D (Meals)**: `{{ $node.Webhook.json.meals_provided ? 'Yes' : 'No' }}`
+       - **Column E (Has File)**: `{{ $node.Webhook.json.uploaded_file ? 'Yes' : 'No' }}`
+       - **Column F (Flight)**: `{{ $node.Webhook.json.flight_information }}`
+
+4. **Activate Workflow**
+   - Click the toggle switch in top-right corner
+   - Copy the production webhook URL
+   - Add it to your app's environment variables
+
+**Done!** Now every form submission will trigger email + spreadsheet update.
+
+---
 
 ## Common n8n Workflow Examples
 

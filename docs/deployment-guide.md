@@ -200,6 +200,30 @@ This application currently uses in-memory storage, so no database setup is requi
    
    **Important**: The app automatically binds to `process.env.PORT` - don't set a fixed PORT value on managed platforms.
 
+5. **Auto-Deployment from GitHub**
+   
+   **Great news!** Once your service is connected to GitHub, Render automatically deploys whenever you push code.
+   
+   **How it works:**
+   - Push to your GitHub repository → Render automatically detects the change
+   - Builds your app with the latest code
+   - Deploys seamlessly with zero downtime
+   - No manual deployment needed!
+   
+   **To control auto-deployment:**
+   - Go to **Settings** → **Build and Deploy** → **Auto-Deploy**
+   - Options:
+     - ✅ **On Commit** (default) - Deploy on every push
+     - **After CI Checks** - Wait for GitHub Actions to pass
+     - **Off** - Manual deploys only
+   
+   **To skip a deployment:**
+   Add `[skip render]` to your commit message:
+   ```bash
+   git commit -m "Update documentation [skip render]"
+   git push
+   ```
+
 **Render Pricing:**
 - **Free Tier**: Limited but good for testing
 - **Starter Plan**: $7/month for web services
