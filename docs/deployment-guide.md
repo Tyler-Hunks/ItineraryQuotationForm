@@ -180,8 +180,20 @@ This application currently uses in-memory storage, so no database setup is requi
    NODE_ENV=production
    ```
 
-3. **Add Environment Variables**
+3. **⚠️ CRITICAL: Fix Build Configuration**
+   
+   **Important**: This app requires build tools (vite, esbuild) that are in `devDependencies`. By default, Render skips dev dependencies in production builds, causing the build to fail with `vite: not found`.
+   
+   **Solution**: Add this environment variable in Render:
+   
+   - **Key**: `NPM_CONFIG_PRODUCTION`
+   - **Value**: `false`
+   
+   This tells npm to install devDependencies, which are needed for the build process.
+
+4. **Add Environment Variables**
    - In service settings, add your environment variables:
+     - `NPM_CONFIG_PRODUCTION`: `false` ← **REQUIRED for build to succeed**
      - `N8N_WEBHOOK_URL`: Your n8n webhook URL
      - `NODE_ENV`: `production`
      - `PORT`: Leave empty (Render will auto-assign)
@@ -328,6 +340,26 @@ echo "PORT=5000" >> .env
 ## Troubleshooting Common Issues
 
 ### Build Failures
+
+#### "vite: not found" or "esbuild: not found" Error
+
+**Problem**: Build fails with error `sh: 1: vite: not found` or similar for esbuild
+
+**Cause**: The build tools (vite, esbuild) are in `devDependencies`, and many hosting platforms skip dev dependencies in production builds.
+
+**Solution for Render**:
+1. Go to your service's Environment settings
+2. Add environment variable:
+   - **Key**: `NPM_CONFIG_PRODUCTION`
+   - **Value**: `false`
+3. Redeploy your service
+
+**Solution for Other Platforms**:
+- Railway: Usually works by default
+- Vercel: Not recommended for this app architecture
+- VPS: Ensure you run `npm install` (not `npm install --production`)
+
+#### General Build Issues
 ```bash
 # Check Node.js version compatibility
 node --version
