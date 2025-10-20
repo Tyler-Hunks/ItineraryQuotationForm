@@ -33,6 +33,11 @@ const presetExcludes = [
   "Other expenses which are not indicated in itinerary"
 ];
 
+const presetTerms = [
+  "Tour fare is subject to change if group size less than {{enter number}} pax",
+  "Quotation valid till {{pick/enter date}}. Rate subject to change after {{enter/pick date}}"
+];
+
 
 export default function TravelBooking() {
   const { toast } = useToast();
@@ -43,8 +48,14 @@ export default function TravelBooking() {
     starting_date: "",
     meals_provided: false,
     flight_information: "",
+    number_of_delegates: 1,
+    number_of_tour_leaders: 1,
+    hotel_selection: "",
+    tour_fare: null,
+    single_supplement: null,
     tour_fair_includes: presetIncludes,
     tour_fair_excludes: presetExcludes,
+    terms_and_conditions: presetTerms,
     uploaded_file: null as any,
     file_size_limit_enabled: true,
     itinerary_language: "English"
@@ -86,8 +97,14 @@ export default function TravelBooking() {
       starting_date: data.starting_date || null,
       meals_provided: data.meals_provided,
       flight_information: data.flight_information || "",
+      number_of_delegates: data.number_of_delegates,
+      number_of_tour_leaders: data.number_of_tour_leaders,
+      hotel_selection: data.hotel_selection,
+      tour_fare: data.tour_fare,
+      single_supplement: data.single_supplement,
       tour_fair_includes: data.tour_fair_includes,
       tour_fair_excludes: data.tour_fair_excludes,
+      terms_and_conditions: data.terms_and_conditions,
       uploaded_file: data.uploaded_file,
       file_size_limit_enabled: fileSizeLimit,
       itinerary_language: data.itinerary_language
@@ -235,6 +252,59 @@ export default function TravelBooking() {
                   />
                 </section>
 
+                {/* Group Information Section */}
+                <section className="space-y-4" aria-labelledby="group-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="group-section-heading">Group Information</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="number_of_delegates"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Delegates <span className="text-destructive" aria-label="required">*</span></FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="1"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                              data-testid="input-delegates"
+                              aria-describedby="delegates-help"
+                            />
+                          </FormControl>
+                          <p id="delegates-help" className="text-sm text-muted-foreground">
+                            Total number of delegates in the group
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="number_of_tour_leaders"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Tour Leaders <span className="text-destructive" aria-label="required">*</span></FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="1"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                              data-testid="input-tour-leaders"
+                              aria-describedby="tour-leaders-help"
+                            />
+                          </FormControl>
+                          <p id="tour-leaders-help" className="text-sm text-muted-foreground">
+                            Default is 1 tour leader
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </section>
+
                 {/* Flight Info Section */}
                 <section className="space-y-4" aria-labelledby="flight-section-heading">
                   <h2 className="text-xl font-semibold text-card-foreground" id="flight-section-heading">Flight Information</h2>
@@ -261,6 +331,93 @@ export default function TravelBooking() {
                       </FormItem>
                     )}
                   />
+                </section>
+
+                {/* Hotel Selection Section */}
+                <section className="space-y-4" aria-labelledby="hotel-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="hotel-section-heading">Hotel Selection</h2>
+                  <FormField
+                    control={form.control}
+                    name="hotel_selection"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hotel Details <span className="text-destructive" aria-label="required">*</span></FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter hotel name and details (e.g., 5Night @ Holiday Inn Express Xi'an Daxing IHG or similar local 4*)"
+                            className="resize-none"
+                            rows={4}
+                            {...field}
+                            data-testid="textarea-hotel-selection"
+                            aria-describedby="hotel-help"
+                          />
+                        </FormControl>
+                        <p id="hotel-help" className="text-sm text-muted-foreground">
+                          Specify the hotel name, location, star rating, and number of nights
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </section>
+
+                {/* Pricing Section */}
+                <section className="space-y-4" aria-labelledby="pricing-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="pricing-section-heading">Pricing Information</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="tour_fare"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tour Fare</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              step="0.01"
+                              min="0"
+                              placeholder="e.g., 5098"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                              data-testid="input-tour-fare"
+                              aria-describedby="tour-fare-help"
+                            />
+                          </FormControl>
+                          <p id="tour-fare-help" className="text-sm text-muted-foreground">
+                            Total tour fare per person (e.g., RM 5098)
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="single_supplement"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Single Supplement</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              step="0.01"
+                              min="0"
+                              placeholder="e.g., 558"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                              data-testid="input-single-supplement"
+                              aria-describedby="single-supplement-help"
+                            />
+                          </FormControl>
+                          <p id="single-supplement-help" className="text-sm text-muted-foreground">
+                            Additional cost for single room (e.g., RM 558)
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </section>
 
                 {/* Itinerary Language Section */}
@@ -355,6 +512,32 @@ export default function TravelBooking() {
                             presetItems={presetExcludes}
                             testId="list-excludes"
                             addButtonTestId="button-add-exclude"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </section>
+
+                {/* Terms and Conditions Section */}
+                <section className="space-y-4" aria-labelledby="terms-section-heading">
+                  <h2 className="text-xl font-semibold text-card-foreground" id="terms-section-heading">Terms & Conditions</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Add or customize terms and conditions. Use template variables like <code className="bg-muted px-1 py-0.5 rounded">{'{{enter number}}'}</code> or <code className="bg-muted px-1 py-0.5 rounded">{'{{pick/enter date}}'}</code> for values to be filled in.
+                  </p>
+                  <FormField
+                    control={form.control}
+                    name="terms_and_conditions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <DynamicList
+                            items={field.value}
+                            onChange={field.onChange}
+                            presetItems={presetTerms}
+                            testId="list-terms"
+                            addButtonTestId="button-add-term"
                           />
                         </FormControl>
                         <FormMessage />

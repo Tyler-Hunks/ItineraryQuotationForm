@@ -38,8 +38,12 @@ Key development decisions:
 
 ### Form Features
 The travel booking form includes several sophisticated features:
+- **Group Information**: Number of delegates and tour leaders (default 1 tour leader) with numeric validation
+- **Hotel Selection**: Flexible textarea for hotel details including name, location, star rating, and nights
+- **Pricing**: Tour fare and single supplement fields with decimal number support
+- **Terms & Conditions**: Dynamic list with customizable templates supporting template variables (e.g., {{enter number}}, {{pick/enter date}})
 - **Dynamic Lists**: Tour inclusions and exclusions with preset items and ability to add custom entries
-- **File Upload**: Document upload with drag-and-drop support, file size limits, and type validation
+- **File Upload**: Document upload with drag-and-drop support, 10MB file size limit (configurable), and type validation for PDF, DOCX, XLSX, and MD files
 - **Date Handling**: Date picker with proper formatting and validation
 - **Real-time Validation**: Form validation using Zod schemas with immediate feedback
 
