@@ -9,15 +9,17 @@ export const travelBookingSchema = z.object({
   hotel_selection: z.string(),
   tour_fare: z.number().nullable(),
   single_supplement: z.number().nullable(),
+  special_terms_enabled: z.boolean(),
+  special_terms: z.array(z.string()),
   tour_fair_includes: z.array(z.string()),
   tour_fair_excludes: z.array(z.string()),
-  terms_and_conditions: z.array(z.string()),
   uploaded_file: z.object({
     filename: z.string(),
     size: z.number(),
     type: z.string(),
     data: z.string()
   }).nullable(),
+  markdown_content: z.string(),
   file_size_limit_enabled: z.boolean(),
   itinerary_language: z.string()
 });
@@ -34,15 +36,17 @@ export const travelBookingFormSchema = z.object({
   hotel_selection: z.string().min(1, "Hotel selection is required"),
   tour_fare: z.number().nullable(),
   single_supplement: z.number().nullable(),
+  special_terms_enabled: z.boolean(),
+  special_terms: z.array(z.string()),
   tour_fair_includes: z.array(z.string()).min(1, "At least one include item is required"),
   tour_fair_excludes: z.array(z.string()).min(1, "At least one exclude item is required"),
-  terms_and_conditions: z.array(z.string()).min(1, "At least one term is required"),
   uploaded_file: z.object({
     filename: z.string(),
     size: z.number(),
     type: z.string(),
     data: z.string()
   }).nullable().refine((file) => file !== null, "Document upload is required"),
+  markdown_content: z.string().optional(),
   file_size_limit_enabled: z.boolean(),
   itinerary_language: z.string().min(1, "Please select or enter an itinerary language")
 });

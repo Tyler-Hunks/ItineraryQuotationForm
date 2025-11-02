@@ -20,17 +20,20 @@ export function DynamicList({
   addButtonTestId 
 }: DynamicListProps) {
   const [newItem, setNewItem] = useState("");
+  
+  // Safety check: ensure items is always an array
+  const safeItems = items || [];
 
   const addItem = () => {
     if (newItem.trim()) {
-      onChange([...items, newItem.trim()]);
+      onChange([...safeItems, newItem.trim()]);
       setNewItem("");
     }
   };
 
   const removeItem = (index: number) => {
     // Allow removal of any item, including preset items
-    const newItems = items.filter((_, i) => i !== index);
+    const newItems = safeItems.filter((_, i) => i !== index);
     onChange(newItems);
   };
 
@@ -49,7 +52,7 @@ export function DynamicList({
     <Card className="bg-muted">
       <CardContent className="p-6 space-y-3">
         <div className="space-y-2" data-testid={testId} role="list" aria-label="Tour fair items list">
-          {items.map((item, index) => (
+          {safeItems.map((item, index) => (
             <div key={index} className="flex items-start space-x-3" role="listitem">
               <span className="text-primary font-medium mt-2" data-testid="text-item-letter" aria-hidden="true">
                 {getLetter(index)})
@@ -61,7 +64,7 @@ export function DynamicList({
                   <Input
                     value={item}
                     onChange={(e) => {
-                      const newItems = [...items];
+                      const newItems = [...safeItems];
                       newItems[index] = e.target.value;
                       onChange(newItems);
                     }}

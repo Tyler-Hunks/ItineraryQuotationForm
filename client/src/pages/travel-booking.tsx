@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { travelBookingFormSchema, type TravelBookingForm, type TravelBooking } from "@shared/schema";
 import { DynamicList } from "@/components/dynamic-list";
+import { EditableTemplateList } from "@/components/editable-template-list";
 import { FileUpload } from "@/components/file-upload";
 import { Loader2 } from "lucide-react";
 
@@ -53,10 +54,12 @@ export default function TravelBooking() {
     hotel_selection: "",
     tour_fare: null,
     single_supplement: null,
+    special_terms_enabled: false,
+    special_terms: presetTerms,
     tour_fair_includes: presetIncludes,
     tour_fair_excludes: presetExcludes,
-    terms_and_conditions: presetTerms,
     uploaded_file: null as any,
+    markdown_content: "",
     file_size_limit_enabled: true,
     itinerary_language: "English"
   };
@@ -102,10 +105,12 @@ export default function TravelBooking() {
       hotel_selection: data.hotel_selection,
       tour_fare: data.tour_fare,
       single_supplement: data.single_supplement,
+      special_terms_enabled: data.special_terms_enabled,
+      special_terms: data.special_terms,
       tour_fair_includes: data.tour_fair_includes,
       tour_fair_excludes: data.tour_fair_excludes,
-      terms_and_conditions: data.terms_and_conditions,
       uploaded_file: data.uploaded_file,
+      markdown_content: data.markdown_content || "",
       file_size_limit_enabled: fileSizeLimit,
       itinerary_language: data.itinerary_language
     };
@@ -361,9 +366,10 @@ export default function TravelBooking() {
                   />
                 </section>
 
-                {/* Pricing Section */}
-                <section className="space-y-4" aria-labelledby="pricing-section-heading">
+                {/* Pricing & Special Terms Section */}
+                <section className="space-y-6" aria-labelledby="pricing-section-heading">
                   <h2 className="text-xl font-semibold text-card-foreground" id="pricing-section-heading">Pricing Information</h2>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -417,6 +423,63 @@ export default function TravelBooking() {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  {/* Special Terms and Conditions */}
+                  <div className="space-y-4 pt-4 border-t border-border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-card-foreground">Special Terms and Conditions</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Add pricing-related terms with editable template variables
+                        </p>
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="special_terms_enabled"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 mb-0">
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                data-testid="toggle-special-terms"
+                                aria-label="Enable special terms and conditions"
+                              />
+                            </FormControl>
+                            <FormLabel className="!mt-0 cursor-pointer">
+                              Apply Terms
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {form.watch("special_terms_enabled") && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          Click on highlighted fields like <code className="bg-muted px-1 py-0.5 rounded text-primary">{'{{enter number}}'}</code> to edit them directly
+                        </p>
+                        <FormField
+                          control={form.control}
+                          name="special_terms"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <EditableTemplateList
+                                  items={field.value}
+                                  onChange={field.onChange}
+                                  presetItems={presetTerms}
+                                  testId="list-special-terms"
+                                  addButtonTestId="button-add-special-term"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                   </div>
                 </section>
 
@@ -520,32 +583,6 @@ export default function TravelBooking() {
                   />
                 </section>
 
-                {/* Terms and Conditions Section */}
-                <section className="space-y-4" aria-labelledby="terms-section-heading">
-                  <h2 className="text-xl font-semibold text-card-foreground" id="terms-section-heading">Terms & Conditions</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Add or customize terms and conditions. Use template variables like <code className="bg-muted px-1 py-0.5 rounded">{'{{enter number}}'}</code> or <code className="bg-muted px-1 py-0.5 rounded">{'{{pick/enter date}}'}</code> for values to be filled in.
-                  </p>
-                  <FormField
-                    control={form.control}
-                    name="terms_and_conditions"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <DynamicList
-                            items={field.value}
-                            onChange={field.onChange}
-                            presetItems={presetTerms}
-                            testId="list-terms"
-                            addButtonTestId="button-add-term"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </section>
-
                 {/* File Upload Section */}
                 <section className="space-y-4" aria-labelledby="upload-section-heading">
                   <h2 className="text-xl font-semibold text-card-foreground" id="upload-section-heading">
@@ -596,6 +633,31 @@ export default function TravelBooking() {
                           />
                         </FormControl>
                         <FormMessage id="upload-error" />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Markdown Content Backup */}
+                  <FormField
+                    control={form.control}
+                    name="markdown_content"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Markdown Content (Optional Backup)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Paste markdown or markdown-formatted tables here as a backup if document processing doesn't work..."
+                            className="resize-none font-mono text-sm"
+                            rows={8}
+                            {...field}
+                            data-testid="textarea-markdown-content"
+                            aria-describedby="markdown-help"
+                          />
+                        </FormControl>
+                        <p id="markdown-help" className="text-sm text-muted-foreground">
+                          Optional: Paste markdown content or tables here as a fallback if automated document processing fails
+                        </p>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
